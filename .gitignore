@@ -1,0 +1,35 @@
+# Node.js
+node_modules/
+package-lock.json
+npm-debug.log
+yarn-error.log
+
+# Environment variables
+.env
+
+# Logs
+logs/
+*.log
+*.log.*
+
+# Editor/IDE
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Blockchain / Hardhat / Truffle
+artifacts/
+cache/
+build/
+coverage/
+typechain/
+
+# Frontend build outputs
+frontend/build/
+frontend/dist/
+
+# Optional: ignore local MongoDB data (se tiveres)
+data/db/
