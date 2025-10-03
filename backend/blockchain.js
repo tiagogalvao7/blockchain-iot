@@ -77,13 +77,27 @@ const wallet = new ethers.Wallet(privateKey, provider);
 // Create the instance of the contract
 // call functions of the contract with this instance
 // contract.storeData & contract.getData
-const contract = new ethers.Contract(contractAddress, contractABI, wallet);
+const iotContract = new ethers.Contract(contractAddress, contractABI, wallet);
 
 // Store Data function
-async function storeDataOnChain(hash) {}
+async function storeDataOnChain(hash) {
+  try {
+    // call for store data function
+    const tx = await iotContract.storeData(hash);
+    // wait for transaction
+    const receipt = await tx.wait();
+    console.log("Tx mined:", receipt.transactionHah);
+    return receipt;
+  } catch (err) {
+    console.error("Error sending data to blockchain", err);
+    throw err;
+  }
+}
 
 // Get Data function
-async function getDataFromChain(index) {}
+async function getDataFromChain(index) {
+  return await iotContract.getData(index);
+}
 
 // export functions
 module.exports = {

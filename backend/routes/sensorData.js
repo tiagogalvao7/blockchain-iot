@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const SensorData = require("../models/SensorData");
+const hash = require("../utils/hashUtils");
 
 // GET - Retrieve all measures
 router.get("/", async (req, res) => {
@@ -16,12 +17,26 @@ router.get("/", async (req, res) => {
 // POST - Store humidity and temperature
 router.post("/", async (req, res) => {
   try {
+    // 1. Create and store data in DB
     const newMeasure = new SensorData({
       temperature: req.body.temperature,
       humidity: req.body.humidity,
     });
 
     const saved = await newMeasure.save();
+
+    // 2. Generate hash
+    const hashValue = hash.generateHash(
+      saved._id.toString(),
+      saved.createdAt.toISOString(),
+      saved.temperature,
+      saved.humidity
+    );
+
+    // 3. Sava hash in
+    saved.hash = hashValue;
+    await saved.save();
+
     res.status(201).json(saved);
   } catch (err) {
     res.status(400).json({ error: err.message });
