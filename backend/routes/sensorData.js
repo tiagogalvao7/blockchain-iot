@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const SensorData = require("../models/SensorData");
 const hash = require("../utils/hashUtils");
+const { storeDataOnChain, storeBatchData } = require("../blockchain");
 
 // GET - Retrieve all measures
 router.get("/", async (req, res) => {
@@ -33,9 +34,34 @@ router.post("/", async (req, res) => {
       saved.humidity
     );
 
-    // 3. Sava hash in
+    // 3. Save hash in database
     saved.hash = hashValue;
     await saved.save();
+
+    // 4. Check if exists 10 or more hashes to sent for blockchain
+    const pending = await SensorData.find({ sentToBlockchain: false });
+
+    if (pending.length >= 10) {
+      // grab 10 first hashes
+      const batch = pending.slice(0, 10);
+
+      // create array of hashes
+      const hashesArray = batch.map((r) => r.hash);
+
+      try {
+        // send 10 hashes in one transaction
+        const tx = await storeBatchData(hashesArray);
+
+        // check each hash with sent
+        for (let record of batch) {
+          record.sentToBlockchain = true;
+          record.txHash = tx.hash;
+          await record.save();
+        }
+      } catch (err) {
+        console.error("Erro ao enviar batch:", err);
+      }
+    }
 
     res.status(201).json(saved);
   } catch (err) {
@@ -56,6 +82,21 @@ router.get("/stats", async (req, res) => {
       },
     ]);
     res.json(stats[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET - data + etherscan link
+router.get("/with-etherscan", async (req, res) => {
+  try {
+    const baseUrl = `https://sepolia.etherscan.io/tx/`;
+    const data = await SensorData.find().lean();
+    const enriched = data.map((item) => ({
+      ...item,
+      etherscanLink: item.txHash ? `${baseUrl}${item.txHash}` : null,
+    }));
+    res.json(enriched);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

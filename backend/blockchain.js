@@ -10,6 +10,19 @@ const contractABI = [
     inputs: [
       {
         indexed: false,
+        internalType: "bytes32[]",
+        name: "hashes",
+        type: "bytes32[]",
+      },
+    ],
+    name: "BatchDataStored",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: false,
         internalType: "bytes32",
         name: "",
         type: "bytes32",
@@ -17,6 +30,19 @@ const contractABI = [
     ],
     name: "DataStored",
     type: "event",
+  },
+  {
+    inputs: [
+      {
+        internalType: "bytes32[]",
+        name: "newHashes",
+        type: "bytes32[]",
+      },
+    ],
+    name: "storeBatchData",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
   },
   {
     inputs: [
@@ -69,9 +95,22 @@ const contractABI = [
     stateMutability: "view",
     type: "function",
   },
+  {
+    inputs: [],
+    name: "totalStored",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
 ];
 
-const provider = new ethers.providers.JsonRpcProvider(providerURL);
+const provider = new ethers.JsonRpcProvider(providerURL);
 const wallet = new ethers.Wallet(privateKey, provider);
 
 // Create the instance of the contract
@@ -79,7 +118,7 @@ const wallet = new ethers.Wallet(privateKey, provider);
 // contract.storeData & contract.getData
 const iotContract = new ethers.Contract(contractAddress, contractABI, wallet);
 
-// Store Data function
+// Store Data in blockchain function
 async function storeDataOnChain(hash) {
   try {
     // call for store data function
@@ -94,13 +133,35 @@ async function storeDataOnChain(hash) {
   }
 }
 
-// Get Data function
+async function storeBatchData(hashes) {
+  try {
+    // call for store data function
+    const tx = await iotContract.storeBatchData(hashes);
+    // wait for transaction
+    const receipt = await tx.wait();
+    console.log("Batch Tx mined:", receipt.transactionHah);
+    return receipt;
+  } catch (err) {
+    console.error("Error sending batch data to blockchain", err);
+    throw err;
+  }
+}
+
+// Get Data from blockchain function
 async function getDataFromChain(index) {
-  return await iotContract.getData(index);
+  try {
+    const hash = await iotContract.getData(index);
+    console.log("Hash at index", index, ":", hash);
+    return hash;
+  } catch (err) {
+    console.error("Error reading data from blockchain", err);
+    throw err;
+  }
 }
 
 // export functions
 module.exports = {
-  storeDataOnChain,
   getDataFromChain,
+  storeDataOnChain,
+  storeBatchData,
 };

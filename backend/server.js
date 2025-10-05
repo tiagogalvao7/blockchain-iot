@@ -1,4 +1,5 @@
 const express = require("express");
+const cors = require("cors");
 const connectDB = require("./db");
 const sensorDataRouter = require("./routes/sensorData");
 require("dotenv").config();
@@ -11,6 +12,8 @@ connectDB();
 
 // Middleware
 app.use(express.json());
+
+app.use(cors());
 
 // Routes
 app.use("/api/sensor-data", sensorDataRouter);
